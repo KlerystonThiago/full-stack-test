@@ -7,6 +7,10 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { initializeTheme } from './composables/useAppearance';
+import VueSweetalert2 from 'vue-sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
+import ToastPlugin from 'vue-toast-notification'
+import 'vue-toast-notification/dist/theme-sugar.css'
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -19,6 +23,12 @@ createInertiaApp({
 		),
 	setup({ el, App, props, plugin }) {
 		const app = createApp({ render: () => h(App, props) })
+            .use(VueSweetalert2)
+            .use(ToastPlugin, {
+                position: 'left-right',
+                duration: 4000,
+                dismissible: true,
+            })
 			.use(plugin)
 			.use(ZiggyVue)
 			.use(i18nVue as any, {

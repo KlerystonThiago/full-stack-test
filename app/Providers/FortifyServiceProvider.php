@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Contracts\LoginResponse;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -31,6 +32,24 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureLoginRedirect();        
+    }
+
+    function configureLoginRedirect(): void
+    {
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+            public function toResponse($request)
+            {
+                $user = $request->user();                    
+                $defaultRedirect = '/dashboard';
+                
+                if ($user->role?->name === 'god') {
+                    $defaultRedirect = '/a/admin/users';
+                }
+
+                return redirect()->intended($defaultRedirect);
+            }
+        });
     }
 
     /**

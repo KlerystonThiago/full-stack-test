@@ -51,5 +51,9 @@ class JetstreamServiceProvider extends ServiceProvider
             'update',
             'delete',
         ])->description('Administrator users can perform any action.');
+        
+        Jetstream::role('view', 'Visualizador', [
+            'read'
+        ])->description('Viewer users can perform any action.');
     }
 }

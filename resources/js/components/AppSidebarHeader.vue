@@ -21,19 +21,14 @@ withDefaults(
         class="flex justify-between h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4"
     >
         <div class="flex items-center gap-2">
-            <SidebarTrigger class="-ml-1" />
+            <SidebarTrigger class="-ml-1 cursor-pointer" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
 
         <div>
-          <Button as-child variant="ghost">
-            <Link :href="route('admin.users.index')">
-              <ShieldAlert />
-              Admin
-            </Link>
-          </Button>
+          <h1>Leet Panel</h1>
         </div>
     </header>
 </template>

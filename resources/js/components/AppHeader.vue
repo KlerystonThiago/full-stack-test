@@ -238,7 +238,7 @@ const rightNavItems: NavItem[] = [
                     </div>
 
                     <DropdownMenu>
-                        <DropdownMenuTrigger :as-child="true">
+                        <DropdownMenuTrigger :as-child="true" class="cursor-pointer">
                             <Button
                                 variant="ghost"
                                 size="icon"

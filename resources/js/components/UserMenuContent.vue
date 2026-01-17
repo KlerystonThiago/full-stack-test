@@ -39,19 +39,20 @@ defineProps<Props>();
 
 <template>
     <DropdownMenuLabel class="p-0 font-normal">
-        <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-            <UserInfo :user="user" :show-email="true" />
-        </div>
+      <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+          <UserInfo :user="user" :show-email="true" />
+      </div>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
-        <DropdownMenuItem :as-child="true">
-            <Link class="block w-full" :href="edit()" as="button">
-                <Settings class="mr-2 h-4 w-4" />
-                Settings
-            </Link>
-        </DropdownMenuItem>
-      <DropdownMenuSub>
+      <DropdownMenuItem :as-child="true">
+          <Link class="block w-full" :href="edit()" as="button">
+              <Settings class="mr-2 h-4 w-4" />
+              Settings
+          </Link>
+      </DropdownMenuItem>
+
+      <DropdownMenuSub v-if="user.role_id !== 1">
         <DropdownMenuItem as-child>
           <DropdownMenuSubTrigger>
             <Users2 class="mr-2 h-4 w-4" />
@@ -73,6 +74,7 @@ defineProps<Props>();
           </DropdownMenuSubContent>
         </DropdownMenuPortal>
       </DropdownMenuSub>
+
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">

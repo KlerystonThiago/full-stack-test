@@ -6,31 +6,52 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreInvoiceRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
             'customer_id' => ['required', 'exists:customers,id'],
-            'status' => ['required', 'string', 'in:draft,pending,paid,overdue,cancelled'],
+            'status_id' => ['required','exists:status,id'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
+            'amount' => ['required','numeric','min:0'],
             'metadata' => ['nullable', 'array'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.title' => ['required', 'string', 'max:255'],
-            'items.*.subtitle' => ['nullable', 'string', 'max:255'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit_price' => ['required', 'integer', 'min:0'],
+            'products' => ['required','array','min:1'],
+            'products.*.product_id' => ['required','exists:products,id'],
+            'products.*.quantity' => ['required','integer','min:1'],
+            'products.*.price' => ['required','numeric','min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'customer_id.required' => 'Selecione um cliente',
+            'status_id.required' => 'Selecione um status',
+            'due_date.required' => 'Informe a data de vencimento',
+            'products.required' => 'Adicione pelo menos um produto',
+            'products.min' => 'Adicione pelo menos um produto',
         ];
     }
 }
+
+
+/* $validated = $request->validate([
+    'customer_id' => 'required',
+    'status_id' => 'required|exists:status,id',
+    'due_date' => 'required|date',
+    'amount' => 'required|numeric|min:0',
+    'products' => 'required|array|min:1',
+    'products.*.product_id' => 'required|exists:products,id',
+    'products.*.quantity' => 'required|integer|min:1',
+    'products.*.price' => 'required|numeric|min:0',
+], [
+    'customer_id.required' => 'Selecione um cliente',
+    'status_id.required' => 'Selecione um status',
+    'due_date.required' => 'Informe a data de vencimento',
+    'products.required' => 'Adicione pelo menos um produto',
+    'products.min' => 'Adicione pelo menos um produto',
+]); */

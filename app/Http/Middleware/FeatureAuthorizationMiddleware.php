@@ -16,11 +16,15 @@ class FeatureAuthorizationMiddleware
      */
     public function handle(Request $request, Closure $next, string $name): Response
     {
-        if (! Features::check($request, $name)) {
-            abort(403, 'Unauthorized action.');
+        $user = $request->user();
+        
+        if (! $user) {
+            return redirect()->route('login');
         }
-
-        Features::prepareForUsage($request, $name);
+        
+        if ($user->role?->name !== 'god') {
+            return redirect('/dashboard');
+        }
 
         return $next($request);
     }

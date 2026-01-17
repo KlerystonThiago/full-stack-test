@@ -39,6 +39,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'role_id',
         'password',
     ];
 
@@ -97,5 +98,10 @@ class User extends Authenticatable
     public function canImpersonate()
     {
         return Features::check(request(), 'admin');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 }

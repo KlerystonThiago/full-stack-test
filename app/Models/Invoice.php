@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Invoice\InvoiceCode;
-use App\Models\Invoice\InvoiceItem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,17 +12,17 @@ use Lib\Tenancy\Tenantable;
 class Invoice extends Model
 {
     use HasFactory,
-        SoftDeletes,
-        Tenantable;
+        SoftDeletes;
 
     protected $fillable = [
-        'customer_id',
         'code',
+        'customer_id',
+        'status_id',
         'amount',
-        'status',
         'issue_date',
         'due_date',
         'payment_date',
+        'team_id',
         'metadata',
     ];
 
@@ -31,6 +31,7 @@ class Invoice extends Model
         'due_date' => 'date',
         'payment_date' => 'date',
         'metadata' => 'array',
+        'amount' => 'decimal:2',
     ];
 
     protected static function booted()
@@ -45,33 +46,55 @@ class Invoice extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function invoiceItems()
-    {
-        return $this->hasMany(InvoiceItem::class);
-    }
-
     public function bankBillet()
     {
         return $this->hasOne(BankBillet::class);
     }
-
-    /**
-     * Check if the invoice is overdue
-     */
+    
     public function isOverdue(): bool
     {
         return $this->due_date < now()
             && !$this->payment_date
             && in_array($this->status, ['issued']);
     }
-
-    /**
-     * Scope to get overdue invoices
-     */
+    
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now())
             ->whereNull('payment_date')
             ->whereIn('status', ['issued']);
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'invoice_product', 'invoice_id', 'product_id')
+            ->withPivot('name', 'description', 'quantity', 'unit_price', 'amount') // Campos extras do pivot
+            ->withTimestamps()
+            ->wherePivot('deleted_at', null);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class);
+    }
+
+    public function delete()
+    {
+        DB::table('invoice_product')
+            ->where('invoice_id', $this->id)
+            ->whereNull('deleted_at')
+            ->update(['deleted_at' => now()]);
+            
+        return parent::delete();
+    }
+    
+    public function restore()
+    {
+        DB::table('invoice_product')
+            ->where('invoice_id', $this->id)
+            ->whereNotNull('deleted_at')
+            ->update(['deleted_at' => null]);
+            
+        return parent::restore();
     }
 }

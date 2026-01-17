@@ -3,9 +3,12 @@
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController;
+
+Route::get('addTeamTeste', [UserController::class, 'testAddTeam']);
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
+    return Inertia::render('auth/Login', [
         'canRegister' => Features::enabled(Features::registration()),
     ]);
 })->name('home');

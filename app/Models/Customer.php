@@ -10,14 +10,14 @@ use Lib\Tenancy\Tenantable;
 class Customer extends Model
 {
     use HasFactory,
-        Notifiable,
-        Tenantable;
+        Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'phone',
         'address',
+        'document',
     ];
 
     public function invoices()

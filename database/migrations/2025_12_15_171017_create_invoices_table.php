@@ -18,7 +18,7 @@ return new class extends Migration
 
             $table->string('code')->unique();
             $table->integer('amount');
-            $table->string('status');
+            $table->foreignId('status_id');
 
             $table->date('issue_date');
             $table->date('due_date');
