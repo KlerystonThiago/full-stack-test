@@ -36,7 +36,7 @@ return [
     ],
 
     'bank' => [
-        'url' => env('BANK_URL', 'http://localhost/dev-bank'),
+        'url' => env('BANK_URL', 'http://localhost:8000/dev-bank'),
     ],
 
 ];

@@ -35,7 +35,13 @@ const mainNavItems: NavItem[] = [
       href: route('invoices.index'),
       icon: Receipt,
       current: route().current('invoices.*'),
-    }
+    },
+    {
+      title: 'Times',
+      href: route('teams.index'),
+      icon: Receipt,
+      current: route().current('temas.*'),
+    },
 ];
 
 const footerNavItems: NavItem[] = [

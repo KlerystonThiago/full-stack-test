@@ -4,33 +4,26 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\TeamController;
+use App\Http\Middleware\FeatureAuthorizationMiddleware;
 
 Route::get('addTeamTeste', [UserController::class, 'testAddTeam']);
 
 Route::get('/', function () {
-    return Inertia::render('auth/Login', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    return Inertia::render('auth/Login', ['canRegister' => Features::enabled(Features::registration()),]);
 })->name('home');
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function() {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',])->group(function() {
     Route::impersonate();
-
-    Route::prefix('a/admin')
-        ->name('admin.')
-        ->middleware(\App\Http\Middleware\FeatureAuthorizationMiddleware::class . ':admin')
-        ->group(base_path('routes/admin.php'));
+    Route::prefix('a/admin')->name('admin.')->middleware(FeatureAuthorizationMiddleware::class . ':admin')->group(base_path('routes/admin.php'));
 
     Route::get('dashboard', fn() => inertia('Dashboard'))->name('dashboard');
-
-    Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
-    Route::post('invoices/{invoice}/issue', [\App\Http\Controllers\InvoiceController::class, 'issue'])
-        ->name('invoices.issue');
-    Route::resource('customers', \App\Http\Controllers\CustomerController::class);
+    Route::resource('invoices', InvoiceController::class);
+    Route::post('invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue');
+    Route::resource('customers', CustomerController::class);
+    Route::resource('teams', TeamController::class);
 });
 
 require __DIR__.'/settings.php';

@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Team;
 
 class UserSeeder extends Seeder
 {
@@ -60,6 +61,12 @@ class UserSeeder extends Seeder
                 'role_id' => 3,
                 'password' => Hash::make('123'),
             ],
+        ]);
+
+        Team::create([
+            'user_id' => 2,
+            'name' => 'Developers',
+            'personal_team' => true,
         ]);
     }
 }

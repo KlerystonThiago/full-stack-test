@@ -36,6 +36,7 @@
     issue_date: string;
     due_date: string;
     payment_date?: string;
+    team_id?: number;
     customer: {
         id: number;
         name: string;
@@ -53,6 +54,7 @@
     customers: Customer[]
     status: Status[]
     products: Product[]
+    teams: any
   }>()
 
   const showCreateModal = ref(false)
@@ -95,9 +97,9 @@
   <AdminLayout>
     <div class="space-y-4 p-4">
         <div class="flex items-center justify-between">
-            <h1 class="text-3xl font-bold">Invoices</h1>
+            <h1 class="text-3xl font-bold">Admin Invoices</h1>
             <Button class="cursor-pointer" @click="createInvoice">
-                Cadastrar Cliente
+                Gerar Invoice
             </Button>
         </div>
 
@@ -151,6 +153,7 @@
       :customers="customers"
       :status="status"
       :products="products"
+      :teams="teams"
     />
 
   </AdminLayout>

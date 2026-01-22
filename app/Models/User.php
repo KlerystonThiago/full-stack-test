@@ -20,7 +20,6 @@ use Lib\Billing\ValidSubscription;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
     use HasApiTokens;
     use HasProfilePhoto;
@@ -30,45 +29,25 @@ class User extends Authenticatable
     use ValidSubscription;
     use HasTeams;
     use Billable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    
     protected $fillable = [
         'name',
         'email',
         'role_id',
         'password',
     ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    
     protected $hidden = [
         'password',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
     ];
-
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array<int, string>
-     */
+    
     protected $appends = [
         'profile_photo_url',
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    
     protected function casts(): array
     {
         return [
@@ -88,13 +67,7 @@ class User extends Authenticatable
             });
         });
     }
-
-    /**
-     * Return true or false if the user can impersonate an other user.
-     *
-     * @param void
-     * @return bool
-     */
+    
     public function canImpersonate()
     {
         return Features::check(request(), 'admin');
@@ -103,5 +76,44 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if (!$this->currentTeam) {
+            return false;
+        }
+
+        return $this->hasTeamPermission($this->currentTeam, $permission);
+    }
+    
+    public function currentTeamRole(): ?string
+    {
+        if (!$this->currentTeam) {
+            return null;
+        }
+
+        if ($this->ownsTeam($this->currentTeam)) {
+            return 'owner';
+        }
+
+        $role = $this->teamRole($this->currentTeam);
+        
+        return $role?->key;
+    }
+    
+    public function currentTeamPermissions(): array
+    {
+        if (!$this->currentTeam) {
+            return [];
+        }
+
+        $role = $this->currentTeamRole();
+
+        if ($role === 'owner') {
+            return ['*'];
+        }
+
+        return $this->teamPermissions($this->currentTeam);
     }
 }

@@ -10,10 +10,145 @@ use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
+    {
+        $user = auth()->user();
+        $isGod = $user->role_id === 1;
+
+        return inertia('customers/Index', [
+            'customers' => Customer::query()
+                ->withCount('invoices')
+                ->orderByDesc('id')
+                ->paginate(6)
+                ->onEachSide(2)
+                ->through(fn ($customer) => [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'document' => $customer->document,
+                    'address' => $customer->address,
+                    'invoices_count' => $customer->invoices_count,
+                    'created_at' => $customer->created_at->format('d-m-Y H:i'),
+                    'team' => $isGod ? [
+                        'id' => $customer->team->id,
+                        'name' => $customer->team->name,
+                    ] : null,
+                ])
+                ->withQueryString(),
+            'teams' => $isGod ? Team::select('id', 'name')->orderBy('name')->get() : [],
+            'isGod' => $isGod,
+        ]);
+    }
+
+    public function store(StoreCustomerRequest $request)
+    {
+        $user = auth()->user();
+        $data = $request->validated();
+        
+        $data['team_id'] = $user->current_team_id;
+        
+        Customer::withoutGlobalScope('team')->create($data);
+
+        return redirect()->back()->with('success', 'Cliente criado com sucesso');
+    }
+
+    public function update(UpdateCustomerRequest $request, Customer $customer)
+    {
+        $data = $request->validated();
+
+        Customer::withoutGlobalScope('team')->where('id', $customer->id)->update($data);
+
+        return redirect()->back()->with('success', 'Cliente atualizado com sucesso');
+    }
+
+    
+    public function destroy(Customer $customer)
+    {
+        $customer->delete();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Usuário removido com sucesso.');
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /* public function index()
     {
         $customers = Customer::withCount('invoices')
             ->latest()
@@ -23,18 +158,12 @@ class CustomerController extends Controller
             'customers' => $customers,
         ]);
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
+    
     public function create()
     {
         return Inertia::render('customers/Create');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+    
     public function store(StoreCustomerRequest $request)
     {
         $customer = Customer::create($request->validated());
@@ -42,10 +171,7 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)
             ->with('success', 'Customer created successfully.');
     }
-
-    /**
-     * Display the specified resource.
-     */
+    
     public function show(Customer $customer)
     {
         $customer->load(['invoices' => function ($query) {
@@ -56,20 +182,14 @@ class CustomerController extends Controller
             'customer' => $customer,
         ]);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
+    
     public function edit(Customer $customer)
     {
         return Inertia::render('customers/Edit', [
             'customer' => $customer,
         ]);
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
+    
     public function update(UpdateCustomerRequest $request, Customer $customer)
     {
         $customer->update($request->validated());
@@ -77,10 +197,7 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)
             ->with('success', 'Customer updated successfully.');
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
+    
     public function destroy(Customer $customer)
     {
         // Check if customer has invoices
@@ -93,5 +210,4 @@ class CustomerController extends Controller
 
         return redirect()->route('customers.index')
             ->with('success', 'Customer deleted successfully.');
-    }
-}
+    } */

@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 Route::post('/bank-dev/api/billets', function () {
     $validated = request()->validate([
         'name' => 'required|string',
-        'document' => 'required|string',
+        'document' => 'nullable|string',
         'amount' => 'required|numeric|min:0.01',
         'due_date' => 'required|date',
     ]);

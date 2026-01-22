@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Invoice\InvoiceCode;
 use Illuminate\Support\Facades\DB;
+use App\Traits\BelongsToTeam;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,7 +13,8 @@ use Lib\Tenancy\Tenantable;
 class Invoice extends Model
 {
     use HasFactory,
-        SoftDeletes;
+        SoftDeletes,
+        BelongsToTeam;
 
     protected $fillable = [
         'code',
@@ -43,7 +45,8 @@ class Invoice extends Model
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)
+            ->withoutGlobalScope('team');
     }
 
     public function bankBillet()

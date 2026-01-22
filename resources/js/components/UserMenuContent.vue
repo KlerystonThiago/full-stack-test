@@ -61,7 +61,7 @@ defineProps<Props>();
           </DropdownMenuSubTrigger>
         </DropdownMenuItem>
         <DropdownMenuPortal>
-          <DropdownMenuSubContent class="min-w-[200px] bg-white p-2">
+          <DropdownMenuSubContent class="min-w-[200px] bg-black/90 border border-gray p-2" style="transform: translate(15.2px)">
             <DropdownMenuItem v-for="team in $page.props.auth.teams" :key="team.id" @click="switchToTeam(team)" class="cursor-pointer">
               <div class="flex items-center w-full">
                 <div>{{ team.name }}</div>

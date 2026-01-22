@@ -27,6 +27,7 @@
 
   const props = defineProps<{
     customers: any
+    teams: any
   }>()
 
   const showCreateModal = ref(false)
@@ -91,7 +92,7 @@
                   <TableRow v-for="customer in customers.data" :key="customer.id">
                       <TableCell class="pl-5">{{ customer.name }}</TableCell>
                       <TableCell>{{ customer.email }}</TableCell>
-                      <TableCell>{{ customer.phone }}</TableCell>
+                      <TableCell>{{ customer.phone || '-' }}</TableCell>
                       <TableCell>{{ customer.document || '-' }}</TableCell>
                       <TableCell>{{ customer.invoices_count }}</TableCell>
                       <TableCell>{{ customer.created_at }}</TableCell>
@@ -121,6 +122,7 @@
       @update:modalValue="showCreateModal = false"
       :modalValue="showCreateModal"
       :customer="selectedCustomer"
+      :teams="teams"
     />
 
   </AdminLayout>

@@ -36,12 +36,6 @@ class BankService
                 ]);
 
             if (!$response->successful()) {
-                Log::error('Bank billet generation failed', [
-                    'invoice_id' => $invoiceId,
-                    'status' => $response->status(),
-                    'response' => $response->body(),
-                ]);
-
                 throw new \Exception('Failed to generate bank billet: ' . $response->body());
             }
 
@@ -53,11 +47,6 @@ class BankService
                 'bank_response' => $data,
             ];
         } catch (\Exception $e) {
-            Log::error('Bank service error', [
-                'invoice_id' => $invoiceId,
-                'error' => $e->getMessage(),
-            ]);
-
             throw $e;
         }
     }
@@ -80,11 +69,6 @@ class BankService
 
             return null;
         } catch (\Exception $e) {
-            Log::error('Bank billet status check failed', [
-                'code' => $code,
-                'error' => $e->getMessage(),
-            ]);
-
             return null;
         }
     }

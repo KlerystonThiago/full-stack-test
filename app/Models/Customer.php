@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Lib\Tenancy\Tenantable;
+use App\Traits\BelongsToTeam;
 
 class Customer extends Model
 {
     use HasFactory,
-        Notifiable;
+        Notifiable,
+        BelongsToTeam;
 
     protected $fillable = [
         'name',
@@ -18,6 +20,7 @@ class Customer extends Model
         'phone',
         'address',
         'document',
+        'team_id',
     ];
 
     public function invoices()

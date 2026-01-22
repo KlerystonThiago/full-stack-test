@@ -45,15 +45,25 @@ class JetstreamServiceProvider extends ServiceProvider
     {
         Jetstream::defaultApiTokenPermissions(['read']);
 
-        Jetstream::role('admin', 'Administrator', [
-            'create',
-            'read',
-            'update',
-            'delete',
-        ])->description('Administrator users can perform any action.');
-        
-        Jetstream::role('view', 'Visualizador', [
-            'read'
-        ])->description('Viewer users can perform any action.');
+        Jetstream::role('admin', 'Administrador', [
+            'invoice:create', 'invoice:read', 'invoice:update', 'invoice:delete',
+            'customer:create', 'customer:read', 'customer:update', 'customer:delete',
+            'product:create', 'product:read', 'product:update', 'product:delete',
+            'team:create', 'team:read', 'team:update', 'team:delete',
+        ])->description('Administradores podem realizar qualquer ação no team.');
+
+        Jetstream::role('member', 'Membro', [
+            'invoice:create', 'invoice:read', 'invoice:update',
+            'customer:create', 'customer:read', 'customer:update',
+            'team:read',
+            'product:read',
+        ])->description('Membros podem criar e editar faturas e clientes.');
+
+        Jetstream::role('viewer', 'Visualizador', [
+            'invoice:read',
+            'customer:read',
+            'product:read',
+            'team:red'
+        ])->description('Visualizadores só podem ver dados.');
     }
 }

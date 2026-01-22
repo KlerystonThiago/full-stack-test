@@ -7,11 +7,15 @@ use Illuminate\Http\Request;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Models\Customer;
+use App\Models\Team;
 
 class CustomerController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $isGod = $user->role_id === 1;
+        
         return inertia('admin/customers/Index', [
             'customers' => Customer::query()
                 ->withCount('invoices')
@@ -26,35 +30,35 @@ class CustomerController extends Controller
                     'document' => $customer->document,
                     'address' => $customer->address,
                     'invoices_count' => $customer->invoices_count,
+                    'team_id' => $customer->team_id,
                     'created_at' => $customer->created_at->format('d-m-Y H:i'),
+                    'team' => $isGod ? [
+                        'id' => $customer->team->id,
+                        'name' => $customer->team->name,
+                    ] : null,
                 ])
-                
-                ->withQueryString()
+                ->withQueryString(),
+            'teams' => $isGod ? Team::all() : [],
+            'isGod' => $isGod,
         ]);
     }
     
     public function store(StoreCustomerRequest $request)
     {
         $data = $request->validated();
+        
+        Customer::withoutGlobalScope('team')->create($data);
 
-        Customer::create($data);
-
-        return redirect()->back()->with('success', 'Usuário criado com sucesso');
+        return redirect()->back()->with('success', 'Cliente criado com sucesso');
     }
-    
+
     public function update(UpdateCustomerRequest $request, Customer $customer)
     {
         $data = $request->validated();
+        
+        Customer::withoutGlobalScope('team')->where('id', $customer->id)->update($data);
 
-        $customer->update([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'document' => $data['document'],
-            'address' => $data['address'],
-        ]); 
-
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Cliente atualizado com sucesso');
     }
     
     public function destroy(Customer $customer)

@@ -17,6 +17,7 @@ class CustomerSeeder extends Seeder
                 'document' => '05337332430',
                 'phone' => '(81) 99400-3340',
                 'address' => 'Rua da Várzea 53, João Pessoa - Paraíba',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -25,6 +26,7 @@ class CustomerSeeder extends Seeder
                 'document' => '12345678000190',
                 'phone' => '(11) 98765-4321',
                 'address' => 'Av. Paulista, 1500 - São Paulo - SP',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -33,6 +35,7 @@ class CustomerSeeder extends Seeder
                 'document' => '12345678901',
                 'phone' => '(21) 97654-3210',
                 'address' => 'Rua das Flores, 123 - Rio de Janeiro - RJ',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -41,6 +44,7 @@ class CustomerSeeder extends Seeder
                 'document' => '98765432109',
                 'phone' => '(85) 99876-5432',
                 'address' => 'Av. Beira Mar, 456 - Fortaleza - CE',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -49,6 +53,7 @@ class CustomerSeeder extends Seeder
                 'document' => '23456789000123',
                 'phone' => '(11) 3456-7890',
                 'address' => 'Rua dos Gamers, 789 - São Paulo - SP',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -57,6 +62,7 @@ class CustomerSeeder extends Seeder
                 'document' => '45678912345',
                 'phone' => '(31) 99123-4567',
                 'address' => 'Rua Amazonas, 321 - Belo Horizonte - MG',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -65,6 +71,7 @@ class CustomerSeeder extends Seeder
                 'document' => '78912345678',
                 'phone' => '(41) 98234-5678',
                 'address' => 'Av. Marechal Deodoro, 654 - Curitiba - PR',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -73,6 +80,7 @@ class CustomerSeeder extends Seeder
                 'document' => '34567890000145',
                 'phone' => '(48) 3234-5678',
                 'address' => 'Rod. SC-401, 1200 - Florianópolis - SC',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -81,6 +89,7 @@ class CustomerSeeder extends Seeder
                 'document' => '32165498732',
                 'phone' => '(71) 99345-6789',
                 'address' => 'Rua Chile, 88 - Salvador - BA',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -89,6 +98,7 @@ class CustomerSeeder extends Seeder
                 'document' => '65432187965',
                 'phone' => '(61) 98456-7890',
                 'address' => 'SQN 210, Bloco F - Brasília - DF',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -97,6 +107,7 @@ class CustomerSeeder extends Seeder
                 'document' => '45678901000167',
                 'phone' => '(51) 3567-8901',
                 'address' => 'Av. Ipiranga, 2300 - Porto Alegre - RS',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
             [
@@ -105,6 +116,7 @@ class CustomerSeeder extends Seeder
                 'document' => '85274196385',
                 'phone' => '(92) 99567-8901',
                 'address' => 'Av. Eduardo Ribeiro, 950 - Manaus - AM',
+                'team_id' => 1,
                 'created_at' => '2026-01-16 04:37:33',
             ],
         ]);

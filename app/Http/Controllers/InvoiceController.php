@@ -3,169 +3,207 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\Status;
+use App\Models\Product;
 use App\Actions\IssueInvoice;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
+use App\Jobs\IssueInvoiceJob;
+use Illuminate\Support\Facades\Http;
 
 class InvoiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $invoices = Invoice::with(['customer', 'invoiceItems'])
-            ->latest()
-            ->paginate(15);
-
-        return Inertia::render('invoices/Index', [
-            'invoices' => $invoices,
+        /* $invoice = Invoice::find(25);
+        dd($invoice->bankBillet); */
+        return inertia('invoices/Index', [
+            'invoices' => Invoice::query()
+                ->with(['customer' => fn($q) => $q->withoutGlobalScope('team')])
+                ->with('customer')
+                ->orderByDesc('id')
+                ->paginate(5)
+                ->onEachSide(2)
+                ->through(fn ($invoice) => [
+                    'id' => $invoice->id,
+                    'code' => $invoice->code,
+                    'customer_id' => $invoice->customer_id,
+                    'amount' => $invoice->amount,
+                    'status' => $invoice->status,
+                    'issue_date' => $invoice->issue_date->format('d-m-Y'),
+                    'due_date' => $invoice->due_date->format('d-m-Y'),
+                    'customer' => $invoice->customer,
+                    'products' => $invoice->products,
+                    'bankBillet' => $invoice->bankBillet,
+                ])
+            ->withQueryString(),
+            'customers' => Customer::select('id', 'name')->get(),
+            'status' => Status::select('id', 'name')->get(),
+            'products' => Product::all(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $customers = Customer::select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
-
-        return Inertia::render('invoices/Create', [
-            'customers' => $customers,
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreInvoiceRequest $request)
     {
         $validated = $request->validated();
 
-        // Calculate total amount from items
-        $totalAmount = collect($validated['items'])->sum(function ($item) {
-            return $item['quantity'] * $item['unit_price'];
-        });
+        try {
+            DB::beginTransaction();
 
-        // Create invoice
-        $invoice = Invoice::create([
-            'customer_id' => $validated['customer_id'],
-            'status' => $validated['status'],
-            'due_date' => $validated['due_date'],
-            'amount' => $totalAmount,
-            'issue_date' => $validated['issue_date'],
-            'payment_date' => $validated['payment_date'] ?? null,
-            'metadata' => $validated['metadata'] ?? null,
-        ]);
+            $lastInvoice = Invoice::whereYear('created_at', date('Y'))
+                ->orderBy('id', 'desc')
+                ->first();
 
-        // Create invoice items
-        foreach ($validated['items'] as $item) {
-            $invoice->invoiceItems()->create([
-                'title' => $item['title'],
-                'subtitle' => $item['subtitle'] ?? null,
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'amount' => $item['quantity'] * $item['unit_price'],
+            $nextNumber = $lastInvoice ?
+                (int) substr($lastInvoice->code, -5) + 1 :
+                1;
+
+            $code = 'INV-' . date('Y') . '-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
+            $invoice = Invoice::create([
+                'code' => $code,
+                'customer_id' => $validated['customer_id'],
+                'status_id' => $validated['status_id'],
+                'amount' => $validated['amount'],
+                'issue_date' => now(),
+                'due_date' => $validated['due_date'],
+                'team_id' => auth()->user()->current_team_id ?? null,
             ]);
-        }
 
-        return redirect()->route('invoices.show', $invoice)
-            ->with('success', 'Invoice created successfully.');
-    }
+            foreach ($validated['products'] as $product) {
+                $productModel = Product::findOrFail($product['product_id']);
+                $subtotal = $product['price'] * $product['quantity'];
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Invoice $invoice)
-    {
-        $invoice->load(['customer', 'invoiceItems', 'bankBillet']);
-
-        return Inertia::render('invoices/Show', [
-            'invoice' => $invoice,
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Invoice $invoice)
-    {
-        $invoice->load('invoiceItems');
-
-        $customers = Customer::select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
-
-        return Inertia::render('invoices/Edit', [
-            'invoice' => $invoice,
-            'customers' => $customers,
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateInvoiceRequest $request, Invoice $invoice)
-    {
-        $validated = $request->validated();
-
-        // Calculate total amount from items if provided
-        if (isset($validated['items'])) {
-            $totalAmount = collect($validated['items'])->sum(function ($item) {
-                return $item['quantity'] * $item['unit_price'];
-            });
-            $validated['amount'] = $totalAmount;
-        }
-
-        // Update invoice
-        $invoice->update($validated);
-
-        // Update invoice items if provided
-        if (isset($validated['items'])) {
-            // Delete old items
-            $invoice->invoiceItems()->delete();
-
-            // Create new items
-            foreach ($validated['items'] as $item) {
-                $invoice->invoiceItems()->create([
-                    'title' => $item['title'],
-                    'subtitle' => $item['subtitle'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'amount' => $item['quantity'] * $item['unit_price'],
+                $invoice->products()->attach($product['product_id'], [
+                    'name' => $productModel->name,
+                    'description' => $productModel->description,
+                    'quantity' => $product['quantity'],
+                    'unit_price' => $product['price'],
+                    'amount' => $subtotal,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
-        }
 
-        return redirect()->route('invoices.show', $invoice)
-            ->with('success', 'Invoice updated successfully.');
+            DB::commit();
+
+            if ($invoice->status_id == 2) {
+                IssueInvoiceJob::dispatch($invoice->id);
+            }
+
+            return redirect()
+                ->route('invoices.index')
+                ->with('success', 'Fatura criada com sucesso!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Erro ao criar fatura. Tente novamente.');
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+        $validated = $request->validated();
+
+        try {
+            DB::beginTransaction();
+
+            $invoice->load('bankBillet');
+            $hasBillet = $invoice->bankBillet !== null;
+
+            $updateData = [
+                'customer_id' => $validated['customer_id'],
+                'status_id' => $validated['status_id'],
+                'amount' => $validated['amount'],
+                'due_date' => $validated['due_date'],
+            ];
+
+            if ($user->role_id === 1 && isset($validated['team_id'])) {
+                $updateData['team_id'] = $validated['team_id'];
+            }
+
+            $invoice->fill($updateData)->save();
+
+            $invoice->products()->detach();
+
+            foreach ($validated['products'] as $product) {
+                $productModel = Product::find($product['product_id']);
+                $subtotal = $product['price'] * $product['quantity'];
+
+                $invoice->products()->attach($product['product_id'], [
+                    'name' => $productModel->name,
+                    'description' => $productModel->description,
+                    'quantity' => $product['quantity'],
+                    'unit_price' => $product['price'],
+                    'amount' => $subtotal,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            $isPending = $invoice->status_id == 2;
+
+            if ($isPending && $hasBillet) {
+                $billet = $invoice->bankBillet;
+                $bankResponse = $billet->bank_response;
+
+                $bankResponse['amount'] = $validated['amount'];
+                $bankResponse['due_date'] = \Carbon\Carbon::parse($validated['due_date'])->format('Y-m-d');
+                $bankResponse['expires_at'] = \Carbon\Carbon::parse($validated['due_date'])->endOfDay()->toIso8601String();
+
+                if ($invoice->customer) {
+                    $bankResponse['name'] = $invoice->customer->name;
+                    $bankResponse['document'] = $invoice->customer->document ?? 'N/A';
+                }
+
+                $billet->update([
+                    'bank_response' => $bankResponse,
+                    'expires_at' => $validated['due_date'],
+                ]);
+            } elseif ($isPending && !$hasBillet) {
+                IssueInvoiceJob::dispatch($invoice->id);
+            }
+
+            return redirect()
+                ->route('invoices.index')
+                ->with('success', 'Fatura atualizada com sucesso!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Erro ao atualizar fatura: ' . $e->getMessage());
+        }
+    }
+
     public function destroy(Invoice $invoice)
     {
-        $invoice->invoiceItems()->delete();
         $invoice->delete();
 
-        return redirect()->route('invoices.index')
-            ->with('success', 'Invoice deleted successfully.');
+        return redirect()
+            ->route('invoices.index')
+            ->with('success', 'Fatura deletada com sucesso!');
     }
 
-    /**
-     * Issue an invoice and generate bank billet
-     */
-    public function issue(Invoice $invoice, IssueInvoice $issueInvoice)
+    public function restore($id)
     {
-        $issueInvoice->execute($invoice);
+        $invoice = Invoice::withTrashed()->findOrFail($id);
+        $invoice->restore();
 
-        return redirect()->route('invoices.show', $invoice)
-            ->with('success', "Invoice issued successfully.");
-
+        return redirect()
+            ->route('admin.invoices.index')
+            ->with('success', 'Fatura restaurada com sucesso!');
     }
 }

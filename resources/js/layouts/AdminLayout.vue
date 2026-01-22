@@ -3,7 +3,7 @@
   import { dashboard } from '@/routes';
   import type { BreadcrumbItemType } from '@/types';
   import { Link } from '@inertiajs/vue3';
-  import { Users2, Handshake, FileMinus } from 'lucide-vue-next';
+  import { Users2, Users, Handshake, FileMinus } from 'lucide-vue-next';
   import NavFooter from '@/components/NavFooter.vue';
   import NavUser from '@/components/NavUser.vue';
   import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
@@ -41,6 +41,11 @@
           href: admin.invoices.index(),
           icon: FileMinus,
       },
+      {
+        title: 'Times',
+        href: admin.teams.index(),
+        icon: Users        
+      }
   ];
 
   interface Props {

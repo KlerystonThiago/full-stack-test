@@ -1,32 +1,42 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { type BreadcrumbItem } from '@/types';
-import { Button } from '@/components/ui/button';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+  import { ref } from 'vue';
+  import AppLayout from '@/layouts/AppLayout.vue';
+  import { Head, Link, router } from '@inertiajs/vue3';
+  import { Button } from '@/components/ui/button';
+  import Pagination from '@/components/Pagination.vue';
+  import InvoiceFormModal from '@/components/InvoiceFormModal.vue';
+  import Swal from 'sweetalert2';
+  import {
+      Table,
+      TableBody,
+      TableCell,
+      TableHead,
+      TableHeader,
+      TableRow,
+  } from '@/components/ui/table';
+  import type { RouteParams } from 'vendor/tightenco/ziggy/src/js';
+  import { usePermissions } from '@/composables/usePermissions'
+  import BilletModal from '@/components/BilletModal.vue';
 
-interface InvoiceItem {
+  const { can } = usePermissions()
+
+  interface Status {
     id: number;
-    title: string;
-    subtitle?: string;
-    quantity: number;
-    unit_price: number;
-    amount: number;
-}
+    name: string;
+  }
 
-interface Invoice {
+  interface Product {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+  }
+
+  interface Invoice {
     id: number;
     code: string;
     amount: number;
-    status: string;
+    status: Status[];
     issue_date: string;
     due_date: string;
     payment_date?: string;
@@ -35,141 +45,157 @@ interface Invoice {
         name: string;
         email: string;
     };
-    invoice_items: InvoiceItem[];
-}
+  }
 
-interface Props {
-    invoices: {
-        data: Invoice[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-    };
-}
+  interface Customer {
+      id: number;
+      name: string;
+  }
 
-const props = defineProps<Props>();
+  const props = defineProps<{
+    invoices: any
+    customers: Customer[]
+    status: Status[]
+    products: Product[]
+  }>()
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Invoices',
-        href: '/invoices',
-    },
-];
+  const showCreateModal = ref(false)
+  const showCreateModalBillet = ref(false)
+  const selectedInvoice = ref()
 
-const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-        draft: 'default',
-        pending: 'secondary',
-        paid: 'default',
-        overdue: 'destructive',
-        cancelled: 'outline',
-    };
-    return colors[status] || 'default';
-};
+  // ✅ Variável para guardar o boleto selecionado
+  const selectedBillet = ref(null)
 
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-    }).format(amount / 100);
-};
+  const editInvoice = (invoice: Invoice) => {
+    selectedInvoice.value = invoice
+    showCreateModal.value = true
+  }
 
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
+  const createInvoice = () => {
+    selectedInvoice.value = null
+    showCreateModal.value = true
+  }
 
-const deleteInvoice = (id: number) => {
-    if (confirm('Are you sure you want to delete this invoice?')) {
-        router.delete(`/invoices/${id}`);
+  const deleteInvoice = async (invoice: { code: string; id: RouteParams<"admin.invoices.destroy"> | undefined; }) => {
+    const result = await Swal.fire({
+      title: 'Excluir fatura?',
+      text: `A Fatura ${invoice.code} será removida`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+    })
+
+    if (result.isConfirmed) {
+      router.delete(route('invoices.destroy', invoice.id), {
+        onSuccess: () => {
+          Swal.fire('Excluído!', 'Fatura removida com sucesso.', 'success')
+        },
+      })
     }
-};
+  }
+
+  // ✅ Função corrigida para guardar o boleto selecionado
+  const showBillet = (invoice: any) => {
+    selectedBillet.value = invoice.bankBillet
+    showCreateModalBillet.value = true
+  }
 </script>
 
 <template>
-    <Head title="Invoices" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-4 p-4">
-            <div class="flex items-center justify-between">
-                <h1 class="text-3xl font-bold">Invoices</h1>
-                <Link href="/invoices/create">
-                    <Button>Create Invoice</Button>
-                </Link>
-            </div>
-
-            <div class="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Code</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Issue Date</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead class="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="invoice in invoices.data" :key="invoice.id">
-                            <TableCell class="font-medium">{{ invoice.code }}</TableCell>
-                            <TableCell>
-                                <div>
-                                    <div class="font-medium">{{ invoice.customer.name }}</div>
-                                    <div class="text-sm text-muted-foreground">
-                                        {{ invoice.customer.email }}
-                                    </div>
-                                </div>
-                            </TableCell>
-                            <TableCell>{{ formatCurrency(invoice.amount) }}</TableCell>
-                            <TableCell>
-                                <Badge :variant="getStatusColor(invoice.status)">
-                                    {{ invoice.status }}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>{{ formatDate(invoice.issue_date) }}</TableCell>
-                            <TableCell>{{ formatDate(invoice.due_date) }}</TableCell>
-                            <TableCell class="text-right">
-                                <div class="flex justify-end gap-2">
-                                    <Link :href="`/invoices/${invoice.id}`">
-                                        <Button variant="outline" size="sm">View</Button>
-                                    </Link>
-                                    <Link :href="`/invoices/${invoice.id}/edit`">
-                                        <Button variant="outline" size="sm">Edit</Button>
-                                    </Link>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        @click="deleteInvoice(invoice.id)"
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
-
-            <div v-if="invoices.last_page > 1" class="flex justify-center gap-2">
-                <Link
-                    v-for="page in invoices.last_page"
-                    :key="page"
-                    :href="`/invoices?page=${page}`"
-                >
-                    <Button
-                        :variant="page === invoices.current_page ? 'default' : 'outline'"
-                        size="sm"
-                    >
-                        {{ page }}
-                    </Button>
-                </Link>
-            </div>
+  <Head title="Invoices" />
+  <AppLayout>
+    <div class="space-y-4 p-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold">Invoices</h1>
+            <Button
+              v-if="can('customer:create')"
+              class="cursor-pointer"
+              @click="createInvoice"
+            >
+                Gerar Invoice
+            </Button>
         </div>
-    </AppLayout>
+
+        <div class="rounded-md border">
+          <Table>
+              <TableHeader>
+                  <TableRow>
+                      <TableHead class="pl-5">Código</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Emissão</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead class="text-center">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  <TableRow v-for="invoice in invoices.data" :key="invoice.id">
+                      <TableCell class="pl-5">{{ invoice.code }}</TableCell>
+                      <TableCell>{{ invoice.customer?.name || '-'}}</TableCell>
+                      <TableCell>{{ invoice.amount }}</TableCell>
+                      <TableCell>{{ invoice.status.name || '-' }}</TableCell>
+                      <TableCell>{{ invoice.issue_date }}</TableCell>
+                      <TableCell>{{ invoice.due_date }}</TableCell>
+                      <TableCell class="flex justify-end">
+                          <div class="flex justify-center gap-2">
+                              <!-- ✅ Botão Ver Boleto -->
+                              <Button
+                                v-if="invoice.bankBillet"
+                                @click="showBillet(invoice)"
+                                class="cursor-pointer bg-blue-600"
+                                variant="outline"
+                                size="sm"
+                              >
+                                Ver Boleto
+                              </Button>
+
+                              <Button
+                                v-if="can('invoice:update') && invoice.status.id != 4"
+                                variant="outline"
+                                size="sm"
+                                @click="editInvoice(invoice)"
+                                class="cursor-pointer"
+                              >
+                                  Edit
+                              </Button>
+
+                              <Button
+                                  v-if="can('invoice:delete')"
+                                  variant="destructive"
+                                  size="sm"
+                                  @click="deleteInvoice(invoice)"
+                                  class="cursor-pointer"
+                              >
+                                  Delete
+                              </Button>
+                          </div>
+                      </TableCell>
+                  </TableRow>
+              </TableBody>
+          </Table>
+        </div>
+
+        <Pagination :links="invoices.links"/>
+    </div>
+
+    <!-- ✅ Modal de Invoice (fora do loop) -->
+    <InvoiceFormModal
+      :key="selectedInvoice?.id ?? 'create'"
+      @update:modalValue="showCreateModal = false"
+      :modalValue="showCreateModal"
+      :invoice="selectedInvoice"
+      :customers="customers"
+      :status="status"
+      :products="products"
+    />
+
+    <!-- ✅ Modal de Boleto FORA do loop -->
+    <BilletModal 
+      :modalValueBillet="showCreateModalBillet" 
+      @update:modalValueBillet="showCreateModalBillet = false"
+      :billet="selectedBillet"
+    />
+  </AppLayout>
 </template>
